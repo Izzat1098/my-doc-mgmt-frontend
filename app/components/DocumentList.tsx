@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getDocuments, getDocumentsByParent, deleteDocument, getBinDocuments, restoreDocument } from '@/lib/api';
+import { getDocuments, getDocumentsByParent, deleteDocument, getBinDocuments, restoreDocument, getDocumentsByTitle } from '@/lib/api';
 import type { Document } from '@/types/document';
 import { formatDate } from '@/lib/utils';
 import SuccessModal from './SuccessModal';
@@ -22,6 +22,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
   const router = useRouter();
   const folderId = searchParams.get('folder');
   const view = searchParams.get('view');
+  const searchQuery = searchParams.get('search');
 
   useEffect(() => {
     async function fetchDocuments() {
@@ -32,6 +33,8 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
         let docs;
         if (view === 'bin') {
           docs = await getBinDocuments();
+        } else if (searchQuery) {
+          docs = await getDocumentsByTitle(searchQuery);
         } else if (folderId) {
           const parsedId = parseInt(folderId, 10);
           docs = Number.isNaN(parsedId) ? await getDocuments() : await getDocumentsByParent(parsedId);
@@ -59,11 +62,12 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
     }
 
     fetchDocuments();
-  }, [folderId, view])
+  }, [folderId, view, searchQuery])
 
   const handleOpen = (item: Document) => {
-    console.log('Opening:', item.title);
-    // Handle open logic
+    if (item.s3_url) {
+      window.open(item.s3_url, '_blank');
+    }
   };
 
   const handleClick = async (item: Document) => {
@@ -216,18 +220,21 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm text-gray-500">{item.created_by}</span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-center">
                   {view !== "bin" ? (
                     <>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpen(item);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer"
-                    >
-                      Open
-                    </button>
+                    {item.item_type === 'file' ? (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpen(item);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer"
+                      >
+                        Open
+                      </button>
+                    ) : null
+                    }
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();

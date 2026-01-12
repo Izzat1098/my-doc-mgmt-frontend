@@ -1,14 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SearchBar() {
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle search logic here
-    console.log('Searching for:', searchQuery);
+    if (searchQuery.trim()) {
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/');
+    }
   };
 
   return (
@@ -41,7 +46,7 @@ export default function SearchBar() {
           </div>
         </form>
         {/* TODO: To replace this with actual user name after auth is setup */}
-        <h2 className="text-2xl italic text-gray-600 hidden lg:block">Hello, Demo User</h2>
+        <h2 className="text-l italic text-gray-600 hidden lg:block">Hello, Demo User</h2>
       </div>
     </div>
   );

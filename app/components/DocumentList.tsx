@@ -1,78 +1,189 @@
 'use client';
 
-interface Document {
-  id: number;
-  name: string;
-  type: 'folder' | 'file';
-  modified: string;
-  size: string;
-  owner: string;
-}
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { getDocuments, getDocumentsByParent, deleteDocument, getBinDocuments, restoreDocument } from '@/lib/api';
+import type { Document } from '@/types/document';
+import { formatDate } from '@/lib/utils';
+import SuccessModal from './SuccessModal';
 
 interface DocumentListProps {
   items?: Document[];
 }
 
-// just some mock data for now
-const documents = [
-  { id: 1, name: 'Project Proposals', type: 'folder' as const, modified: '2026-01-05', size: '-', owner: 'Newmon' },
-  { id: 2, name: 'Meeting Notes.docx', type: 'file' as const, modified: '2026-01-08', size: '45 KB', owner: 'John'  },
-  { id: 3, name: 'Budget 2026.xlsx', type: 'file' as const, modified: '2026-01-07', size: '128 KB', owner: 'Mew'  },
-  { id: 4, name: 'Photos', type: 'folder' as const, modified: '2026-01-03', size: '-', owner: 'Kate'  },
-  { id: 5, name: 'Presentation.pptx', type: 'file' as const, modified: '2026-01-09', size: '2.4 MB', owner: 'Lilly'  },
-];
+export default function DocumentList({ items: initialItems }: DocumentListProps) {
+  const [items, setItems] = useState<Document[]>(initialItems || []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalItemName, setModalItemName] = useState('');
+  const [modalAction, setModalAction] = useState<'deleted' | 'restored'>('deleted');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const folderId = searchParams.get('folder');
+  const view = searchParams.get('view');
 
-export default function DocumentList({ items = [] }: DocumentListProps) {
-  
-  // replace this with actual api call
-  items = [...documents].sort((a, b) => {
-    // Folders first
-    if (a.type === 'folder' && b.type !== 'folder') return -1;
-    if (a.type !== 'folder' && b.type === 'folder') return 1;
-    // Then alphabetically by name
-    return a.name.localeCompare(b.name);
-  })
+  useEffect(() => {
+    async function fetchDocuments() {
+      try {
+        setLoading(true);
+        
+        // Fetch documents based on view or folder parameter
+        let docs;
+        if (view === 'bin') {
+          docs = await getBinDocuments();
+        } else if (folderId) {
+          const parsedId = parseInt(folderId, 10);
+          docs = Number.isNaN(parsedId) ? await getDocuments() : await getDocumentsByParent(parsedId);
+        } else {
+          docs = await getDocuments();
+        }
+        
+        // Sort: folders first, then alphabetically
+        const sorted = [...docs].sort((a, b) => {
+          if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
+          if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+          return a.title.localeCompare(b.title);
+        });
+        
+        setItems(sorted);
+        setError(null);
+
+      } catch (err) {
+        setError('Failed to load documents');
+        console.error('Error fetching documents:', err);
+
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDocuments();
+  }, [folderId, view])
 
   const handleOpen = (item: Document) => {
-    console.log('Opening:', item.name);
+    console.log('Opening:', item.title);
     // Handle open logic
   };
 
-  const handleDelete = (item: Document) => {
-    console.log('Deleting:', item.name);
-    // Handle delete logic
+  const handleClick = async (item: Document) => {
+    if (item.item_type === 'folder') {
+      // Update URL to navigate to folder
+      router.push(`/?folder=${item.id}`);
+    }
+  };
+
+  const handleDelete = async (item: Document) => {
+    try {
+      await deleteDocument(item.id);
+      
+      // Refetch documents after deletion (respect view/folder)
+      setLoading(true);
+      let docs;
+      if (view === 'bin') {
+        docs = await getBinDocuments();
+      } else if (folderId) {
+        const parsedId = parseInt(folderId, 10);
+        docs = Number.isNaN(parsedId) ? await getDocuments() : await getDocumentsByParent(parsedId);
+      } else {
+        docs = await getDocuments();
+      }
+      
+      const sorted = [...docs].sort((a, b) => {
+        if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
+        if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+        return a.title.localeCompare(b.title);
+      });
+      
+      setItems(sorted);
+      setLoading(false);
+      
+      // Show success modal
+      setModalItemName(item.title);
+      setModalAction('deleted');
+      setShowModal(true);
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleRestore = async (item: Document) => {
+    try {
+      await restoreDocument(item.id);
+      
+      // Refetch documents after deletion (respect view/folder)
+      setLoading(true);
+      let docs;
+      if (view === 'bin') {
+        docs = await getBinDocuments();
+      } else if (folderId) {
+        const parsedId = parseInt(folderId, 10);
+        docs = Number.isNaN(parsedId) ? await getDocuments() : await getDocumentsByParent(parsedId);
+      } else {
+        docs = await getDocuments();
+      }
+      
+      const sorted = [...docs].sort((a, b) => {
+        if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
+        if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+        return a.title.localeCompare(b.title);
+      });
+      
+      setItems(sorted);
+      setLoading(false);
+      
+      // Show success modal
+      setModalItemName(item.title);
+      setModalAction('restored');
+      setShowModal(true);
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      setLoading(false);
+    }
   };
 
   return (
     <>
+      <SuccessModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        itemName={modalItemName}
+        action={modalAction}
+      />
+
       {/* Table for larger screens */}
       <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Name
+              <th className="table-header">
+                Title
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Modified
+              <th className="table-header">
+                Updated At
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <th className="table-header">
                 Size
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <th className="table-header">
                 Owner
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
+              <th className="table-header-right">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {items.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-100 cursor-pointer">
+              <tr 
+                key={item.id} 
+                onClick={() => handleClick(item)}
+                className="hover:bg-gray-100"
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    {item.type === 'folder' ? (
+                    {item.item_type === 'folder' ? (
                       <svg
                         className="w-5 h-5 text-blue-500 mr-3"
                         fill="currentColor"
@@ -93,31 +204,52 @@ export default function DocumentList({ items = [] }: DocumentListProps) {
                         />
                       </svg>
                     )}
-                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                    <span className="text-sm font-medium text-gray-900">{item.title}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">{item.modified}</span>
+                  <span className="text-sm text-gray-500">{formatDate(item.updated_at)}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">{item.size}</span>
+                  <span className="text-sm text-gray-500">{item.file_size_kb}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">{item.owner}</span>
+                  <span className="text-sm text-gray-500">{item.created_by}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button 
-                    onClick={() => handleOpen(item)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    Open
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(item)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Delete
-                  </button>
+                  {view !== "bin" ? (
+                    <>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpen(item);
+                      }}
+                      className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer"
+                    >
+                      Open
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item);
+                      }}
+                      className="text-red-600 hover:text-red-900 cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                    </>
+                    ) : (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRestore(item);
+                      }}
+                      className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer"
+                    >
+                      Restore
+                    </button>
+                    )
+                  }
                 </td>
               </tr>
             ))}
@@ -128,10 +260,14 @@ export default function DocumentList({ items = [] }: DocumentListProps) {
       {/* Card layout for mobile */}
       <div className="md:hidden space-y-3">
         {items.map((item) => (
-          <div key={item.id} className="bg-white rounded-lg shadow p-4">
+          <div 
+            key={item.id} 
+            onClick={() => handleClick(item)}
+            className="bg-white rounded-lg shadow p-4 cursor-pointer"
+          >
             <div className="flex items-start justify-between">
               <div className="flex items-start flex-1">
-                {item.type === 'folder' ? (
+                {item.item_type === 'folder' ? (
                   <svg
                     className="w-6 h-6 text-blue-500 mr-3 mt-1"
                     fill="currentColor"
@@ -153,9 +289,9 @@ export default function DocumentList({ items = [] }: DocumentListProps) {
                   </svg>
                 )}
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-900 mb-1">{item.name}</h3>
-                  <p className="text-xs text-gray-500">Modified: {item.modified}</p>
-                  <p className="text-xs text-gray-500">Size: {item.size}</p>
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">{item.title}</h3>
+                  <p className="text-xs text-gray-500">Updated: {formatDate(item.updated_at)}</p>
+                  <p className="text-xs text-gray-500">Size: {item.file_size_kb}</p>
                 </div>
               </div>
               <button className="text-gray-400 hover:text-gray-600">
@@ -166,13 +302,19 @@ export default function DocumentList({ items = [] }: DocumentListProps) {
             </div>
             <div className="mt-3 flex gap-2">
               <button 
-                onClick={() => handleOpen(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpen(item);
+                }}
                 className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
               >
                 Open
               </button>
               <button 
-                onClick={() => handleDelete(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(item);
+                }}
                 className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-md text-sm font-medium hover:bg-red-100"
               >
                 Delete

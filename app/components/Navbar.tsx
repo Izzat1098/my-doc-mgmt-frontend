@@ -2,12 +2,26 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleLogoClick = () => {
+    router.push('/');
+    router.refresh();
+    setIsOpen(false);
+  };
+
+  const handleBinClick = () => {
+    router.push('/?view=bin');
+    router.refresh();
+    setIsOpen(false);
   };
 
   return (
@@ -15,7 +29,8 @@ export default function Navbar() {
       {/* Mobile Menu Button */}
       <button
         onClick={toggleMenu}
-        className={`lg:hidden fixed top-3 left-4 z-50 p-2 bg-white rounded-md shadow-md hover:bg-gray-50 transition-opacity ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`lg:hidden fixed top-3 left-4 z-50 p-2 bg-white rounded-md shadow-md hover:bg-gray-50 transition-opacity 
+          ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         aria-label="Toggle menu"
       >
         <svg
@@ -60,14 +75,20 @@ export default function Navbar() {
         `}
       >
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-8">myDoc</h2>
+          <div 
+            onClick={handleLogoClick}
+            className="flex items-center justify-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <img src="/favicon.ico" alt="myDoc logo" className="w-8 h-8" />
+            <h2 className="text-2xl font-bold text-gray-800">myDoc</h2>
+          </div>
           
           <ul className="space-y-2">
             <li>
               <Link
-                href="/uploads"
+                href="/"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
-                onClick={() => setIsOpen(false)}
+                onClick={handleLogoClick}
               >
                 <svg
                   className="w-5 h-5 mr-3"
@@ -79,17 +100,17 @@ export default function Navbar() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                   />
                 </svg>
-                Uploads
+                Home
               </Link>
             </li>
             <li>
               <Link
-                href="/bin"
+                href="/?view=bin"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
-                onClick={() => setIsOpen(false)}
+                onClick={handleBinClick}
               >
                 <svg
                   className="w-5 h-5 mr-3"

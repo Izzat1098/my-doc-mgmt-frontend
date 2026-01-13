@@ -43,11 +43,13 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
         } else {
           docs = await getDocuments();
         }
+
+        console.log(docs)
         
         // Sort: folders first, then alphabetically
         const sorted = [...docs].sort((a, b) => {
-          if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
-          if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+          if (a.itemType === 'folder' && b.itemType !== 'folder') return -1;
+          if (a.itemType !== 'folder' && b.itemType === 'folder') return 1;
           return a.title.localeCompare(b.title);
         });
         
@@ -67,13 +69,13 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
   }, [folderId, view, searchQuery])
 
   const handleOpen = (item: Document) => {
-    if (item.s3_url) {
-      window.open(item.s3_url, '_blank');
+    if (item.s3Url) {
+      window.open(item.s3Url, '_blank');
     }
   };
 
   const handleClick = async (item: Document) => {
-    if (item.item_type === 'folder') {
+    if (item.itemType === 'folder') {
       // Update URL to navigate to folder
       router.push(`/?folder=${item.id}`);
     }
@@ -96,8 +98,8 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       }
       
       const sorted = [...docs].sort((a, b) => {
-        if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
-        if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+        if (a.itemType === 'folder' && b.itemType !== 'folder') return -1;
+        if (a.itemType !== 'folder' && b.itemType === 'folder') return 1;
         return a.title.localeCompare(b.title);
       });
       
@@ -106,14 +108,14 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       
       // Show success modal
       setModalTitle("Successful Deletion");
-      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has been moved to Bin`);
+      setModalMsg(`${toTitleCase(item.itemType)} ${item.title} has been moved to Bin`);
       setModalState("success")
       setShowModal(true);
 
     } catch (error) {
       console.error('Failed to delete document:', error);
       setModalTitle("Failed to Delete Document");
-      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has not been deleted`);
+      setModalMsg(`${toTitleCase(item.itemType)} ${item.title} has not been deleted`);
       setModalState("failure")
       setShowModal(true);
       setLoading(false);
@@ -137,8 +139,8 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       }
       
       const sorted = [...docs].sort((a, b) => {
-        if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
-        if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+        if (a.itemType === 'folder' && b.itemType !== 'folder') return -1;
+        if (a.itemType !== 'folder' && b.itemType === 'folder') return 1;
         return a.title.localeCompare(b.title);
       });
       
@@ -147,14 +149,14 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       
       // Show success modal
       setModalTitle("Successful Restoration");
-      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has been restored`);
+      setModalMsg(`${toTitleCase(item.itemType)} ${item.title} has been restored`);
       setModalState("success")
       setShowModal(true);
 
     } catch (error) {
       console.error('Failed to delete document:', error);
       setModalTitle("Failed to Delete Document");
-      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has not been deleted`);
+      setModalMsg(`${toTitleCase(item.itemType)} ${item.title} has not been deleted`);
       setModalState("failure")
       setShowModal(true);
       setLoading(false);
@@ -202,7 +204,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    {item.item_type === 'folder' ? (
+                    {item.itemType === 'folder' ? (
                       <svg
                         className="w-5 h-5 text-blue-500 mr-3"
                         fill="currentColor"
@@ -227,18 +229,18 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">{formatDate(item.updated_at)}</span>
+                  <span className="text-sm text-gray-500">{formatDate(item.updatedAt)}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">{item.file_size_kb}</span>
+                  <span className="text-sm text-gray-500">{item.fileSizeKb}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">{item.created_by}</span>
+                  <span className="text-sm text-gray-500">{item.createdBy}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-center">
                   {!isBin ? (
                     <>
-                    {item.item_type === 'file' ? (
+                    {item.itemType === 'file' ? (
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -289,7 +291,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start flex-1">
-                {item.item_type === 'folder' ? (
+                {item.itemType === 'folder' ? (
                   <svg
                     className="w-6 h-6 text-blue-500 mr-3 mt-1"
                     fill="currentColor"
@@ -312,8 +314,8 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
                 )}
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-gray-900 mb-1">{item.title}</h3>
-                  <p className="text-xs text-gray-500">Updated: {formatDate(item.updated_at)}</p>
-                  <p className="text-xs text-gray-500">Size: {item.file_size_kb}</p>
+                  <p className="text-xs text-gray-500">Updated: {formatDate(item.updatedAt)}</p>
+                  <p className="text-xs text-gray-500">Size: {item.fileSizeKb}</p>
                 </div>
               </div>
               <button className="text-gray-400 hover:text-gray-600">
@@ -325,7 +327,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
             <div className="mt-3 flex gap-2">
               {!isBin ? (
                 <>
-                {item.item_type === 'file' ? (
+                {item.itemType === 'file' ? (
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();

@@ -6,7 +6,6 @@ import DocumentList from './components/DocumentList';
 import AddFolderModal from './components/AddFolderModal';
 import { createFolder, createFile, getDocuments, getDocumentsByParent } from '@/lib/api';
 import { uploadToS3 } from '@/lib/s3';
-import { toTitleCase } from '@/lib/utils';
 import InfoModal from './components/InfoModal';
 
 const MAX_FILE_SIZE_MB = 10;
@@ -37,7 +36,7 @@ export default function Home() {
           : await getDocuments();
 
         const folderExists = existingDocs.some(
-          doc => doc.item_type === 'folder' && doc.title.toLowerCase() === folderName.toLowerCase()
+          doc => doc.itemType === 'folder' && doc.title.toLowerCase() === folderName.toLowerCase()
         );
         if (folderExists) {
           setModalTitle("Folder Already Exists");
@@ -93,7 +92,7 @@ export default function Home() {
 
     try {
       const parentId = folderId ? parseInt(folderId, 10) : undefined;
-      const file_size_kb = Math.round(file.size / 1024); // Convert bytes to KB
+      const fileSizeKb = Math.round(file.size / 1024); // Convert bytes to KB
       
       // Check if file name already exists
       try {
@@ -103,7 +102,7 @@ export default function Home() {
         console.log(existingDocs)
 
         const fileExists = existingDocs.some(
-          doc => doc.item_type === 'file' && doc.title.toLowerCase() === file.name.toLowerCase()
+          doc => doc.itemType === 'file' && doc.title.toLowerCase() === file.name.toLowerCase()
         );
         if (fileExists) {
           setModalTitle("File Already Exists");
@@ -122,7 +121,7 @@ export default function Home() {
         return
       }
 
-      const { document, uploadUrl } = await createFile(file.name, file_size_kb, parentId);
+      const { document, uploadUrl } = await createFile(file.name, fileSizeKb, parentId);
 
       // upload file to s3
       const uploadStatus = await uploadToS3(uploadUrl, file);

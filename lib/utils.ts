@@ -1,3 +1,4 @@
+// format date for display
 export function formatDate(dateString: string | Date | null | undefined): string {
   if (!dateString) return '-';
   
@@ -36,4 +37,15 @@ export function formatDate(dateString: string | Date | null | undefined): string
     month: 'short',
     day: 'numeric'
   });
+}
+
+// Change string to title case
+export function toTitleCase(str: string): string {
+  if (!str) {
+    return "";
+  }
+
+  return str.toLowerCase().split(' ').map((word) => {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
 }

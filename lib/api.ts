@@ -38,6 +38,7 @@ export async function getDocumentsByTitle(title: string): Promise<Document[]> {
   return result.data;
 }
 
+// Delete item based on id
 export async function deleteDocument(id: number): Promise<void> {
   const response = await fetch(`${API_URL}/api/documents/${id}`, {
     method: 'DELETE',
@@ -49,6 +50,7 @@ export async function deleteDocument(id: number): Promise<void> {
   return;
 }
 
+// Get all deleted items
 export async function getBinDocuments(): Promise<Document[]> {
   const response = await fetch(`${API_URL}/api/documents/bin`);
   
@@ -60,6 +62,7 @@ export async function getBinDocuments(): Promise<Document[]> {
   return result.data;
 }
 
+// Restore item by id
 export async function restoreDocument(id: number): Promise<void> {
   const response = await fetch(`${API_URL}/api/documents/${id}/restore`, {
     method: 'PATCH',
@@ -71,6 +74,7 @@ export async function restoreDocument(id: number): Promise<void> {
   return;
 }
 
+// Create a new folder at root or inside another folder
 export async function createFolder(title: string, parentId?: number): Promise<Document> {
   const response = await fetch(`${API_URL}/api/documents`, {
     method: 'POST',
@@ -92,6 +96,7 @@ export async function createFolder(title: string, parentId?: number): Promise<Do
   return result.data;
 }
 
+// Create a file entry and get presigned upload URL
 export async function createFile(title: string, fileSizeKb: number, parentId?: number): Promise<{ document: Document; uploadUrl: string }> {
   const response = await fetch(`${API_URL}/api/documents`, {
     method: 'POST',

@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getDocuments, getDocumentsByParent, deleteDocument, getBinDocuments, restoreDocument, getDocumentsByTitle } from '@/lib/api';
 import type { Document } from '@/types/document';
-import { formatDate } from '@/lib/utils';
-import SuccessModal from './SuccessModal';
+import { formatDate, toTitleCase } from '@/lib/utils';
+import InfoModal from './InfoModal';
 
 interface DocumentListProps {
   items?: Document[];
@@ -16,13 +16,15 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [modalItemName, setModalItemName] = useState('');
-  const [modalAction, setModalAction] = useState<'deleted' | 'restored'>('deleted');
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMsg, setModalMsg] = useState('');
+  const [modalState, setModalState] = useState<'success' | 'failure'>('success');
   const searchParams = useSearchParams();
   const router = useRouter();
   const folderId = searchParams.get('folder');
   const view = searchParams.get('view');
   const searchQuery = searchParams.get('search');
+  const isBin = view === 'bin';
 
   useEffect(() => {
     async function fetchDocuments() {
@@ -31,7 +33,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
         
         // Fetch documents based on view or folder parameter
         let docs;
-        if (view === 'bin') {
+        if (isBin) {
           docs = await getBinDocuments();
         } else if (searchQuery) {
           docs = await getDocumentsByTitle(searchQuery);
@@ -84,7 +86,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       // Refetch documents after deletion (respect view/folder)
       setLoading(true);
       let docs;
-      if (view === 'bin') {
+      if (isBin) {
         docs = await getBinDocuments();
       } else if (folderId) {
         const parsedId = parseInt(folderId, 10);
@@ -103,11 +105,17 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       setLoading(false);
       
       // Show success modal
-      setModalItemName(item.title);
-      setModalAction('deleted');
+      setModalTitle("Successful Deletion");
+      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has been moved to Bin`);
+      setModalState("success")
       setShowModal(true);
+
     } catch (error) {
       console.error('Failed to delete document:', error);
+      setModalTitle("Failed to Delete Document");
+      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has not been deleted`);
+      setModalState("failure")
+      setShowModal(true);
       setLoading(false);
     }
   };
@@ -119,7 +127,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       // Refetch documents after deletion (respect view/folder)
       setLoading(true);
       let docs;
-      if (view === 'bin') {
+      if (isBin) {
         docs = await getBinDocuments();
       } else if (folderId) {
         const parsedId = parseInt(folderId, 10);
@@ -138,22 +146,29 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       setLoading(false);
       
       // Show success modal
-      setModalItemName(item.title);
-      setModalAction('restored');
+      setModalTitle("Successful Restoration");
+      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has been restored`);
+      setModalState("success")
       setShowModal(true);
+
     } catch (error) {
       console.error('Failed to delete document:', error);
+      setModalTitle("Failed to Delete Document");
+      setModalMsg(`${toTitleCase(item.item_type)} ${item.title} has not been deleted`);
+      setModalState("failure")
+      setShowModal(true);
       setLoading(false);
     }
   };
 
   return (
     <>
-      <SuccessModal 
+      <InfoModal 
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        itemName={modalItemName}
-        action={modalAction}
+        title={modalTitle}
+        msg={modalMsg}
+        state={modalState}
       />
 
       {/* Table for larger screens */}
@@ -182,7 +197,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
             {items.map((item) => (
               <tr 
                 key={item.id} 
-                onClick={() => handleClick(item)}
+                onClick={() => !isBin ? handleClick(item) : null}
                 className="hover:bg-gray-100"
               >
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -221,7 +236,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
                   <span className="text-sm text-gray-500">{item.created_by}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-center">
-                  {view !== "bin" ? (
+                  {!isBin ? (
                     <>
                     {item.item_type === 'file' ? (
                       <button 
@@ -269,7 +284,7 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
         {items.map((item) => (
           <div 
             key={item.id} 
-            onClick={() => handleClick(item)}
+            onClick={() => !isBin ? handleClick(item) : null}
             className="bg-white rounded-lg shadow p-4 cursor-pointer"
           >
             <div className="flex items-start justify-between">
@@ -308,24 +323,42 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
               </button>
             </div>
             <div className="mt-3 flex gap-2">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpen(item);
-                }}
-                className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
-              >
-                Open
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(item);
-                }}
-                className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-md text-sm font-medium hover:bg-red-100"
-              >
-                Delete
-              </button>
+              {!isBin ? (
+                <>
+                {item.item_type === 'file' ? (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpen(item);
+                    }}
+                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
+                  >
+                    Open
+                  </button>
+                ) : null
+                }
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                  className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-md text-sm font-medium hover:bg-red-100"
+                >
+                  Delete
+                </button>
+                </>
+                ) : (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRestore(item);
+                  }}
+                  className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
+                >
+                  Restore
+                </button>
+                )
+              }
             </div>
           </div>
         ))}

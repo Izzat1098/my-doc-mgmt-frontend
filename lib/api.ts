@@ -5,23 +5,25 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 // Get root level items (no query params)
 export async function getDocuments(): Promise<Document[]> {
   const response = await fetch(`${API_URL}/api/documents`);
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch documents');
   }
-  
+
   const result = await response.json();
   return result.data;
 }
 
 // Get items inside parentId (folder Id)
-export async function getDocumentsByParent(parentId: number): Promise<Document[]> {
+export async function getDocumentsByParent(
+  parentId: number
+): Promise<Document[]> {
   const response = await fetch(`${API_URL}/api/documents?parentId=${parentId}`);
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch documents');
   }
-  
+
   const result = await response.json();
   return result.data;
 }
@@ -29,11 +31,11 @@ export async function getDocumentsByParent(parentId: number): Promise<Document[]
 // Get items based on title (using LIKE %title% in sql)
 export async function getDocumentsByTitle(title: string): Promise<Document[]> {
   const response = await fetch(`${API_URL}/api/documents?title=${title}`);
-  
+
   if (!response.ok) {
-    return []
+    return [];
   }
-  
+
   const result = await response.json();
   return result.data;
 }
@@ -53,11 +55,11 @@ export async function deleteDocument(id: number): Promise<void> {
 // Get all deleted items
 export async function getBinDocuments(): Promise<Document[]> {
   const response = await fetch(`${API_URL}/api/documents/bin`);
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch bin documents');
   }
-  
+
   const result = await response.json();
   return result.data;
 }
@@ -75,7 +77,10 @@ export async function restoreDocument(id: number): Promise<void> {
 }
 
 // Create a new folder at root or inside another folder
-export async function createFolder(title: string, parentId?: number): Promise<Document> {
+export async function createFolder(
+  title: string,
+  parentId?: number
+): Promise<Document> {
   const response = await fetch(`${API_URL}/api/documents`, {
     method: 'POST',
     headers: {
@@ -97,7 +102,11 @@ export async function createFolder(title: string, parentId?: number): Promise<Do
 }
 
 // Create a file entry and get presigned upload URL
-export async function createFile(title: string, fileSizeKb: number, parentId?: number): Promise<{ document: Document; uploadUrl: string }> {
+export async function createFile(
+  title: string,
+  fileSizeKb: number,
+  parentId?: number
+): Promise<{ document: Document; uploadUrl: string }> {
   const response = await fetch(`${API_URL}/api/documents`, {
     method: 'POST',
     headers: {
@@ -118,6 +127,6 @@ export async function createFile(title: string, fileSizeKb: number, parentId?: n
   const result = await response.json();
   return {
     document: result.data,
-    uploadUrl: result.uploadUrl
+    uploadUrl: result.uploadUrl,
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function SearchBar() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,7 +19,10 @@ export default function SearchBar() {
   return (
     <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
       <div className="px-4 py-3 lg:px-6 flex items-center justify-between gap-4">
-        <form onSubmit={handleSearch} className="flex-1 max-w-3xl ml-13 lg:ml-0">
+        <form
+          onSubmit={handleSearch}
+          className="flex-1 max-w-3xl ml-13 lg:ml-0"
+        >
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <svg
@@ -46,7 +49,9 @@ export default function SearchBar() {
           </div>
         </form>
         {/* TODO: To replace this with actual user name after auth is setup */}
-        <h2 className="text-l italic text-gray-600 hidden lg:block">Hello, Demo User</h2>
+        <h2 className="text-l italic text-gray-600 hidden lg:block">
+          Hello, Demo User
+        </h2>
       </div>
     </div>
   );

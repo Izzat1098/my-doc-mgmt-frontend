@@ -3,12 +3,15 @@
  */
 
 // Upload file to S3
-export async function uploadToS3(uploadUrl: string, file: File): Promise<boolean> {
+export async function uploadToS3(
+  uploadUrl: string,
+  file: File
+): Promise<boolean> {
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     body: file,
     headers: {
-      'Content-Type': file.type
+      'Content-Type': file.type,
     },
   });
 

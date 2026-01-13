@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -75,14 +75,14 @@ export default function Navbar() {
         `}
       >
         <div className="p-6">
-          <div 
+          <div
             onClick={handleLogoClick}
             className="flex items-center justify-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
           >
             <img src="/favicon.ico" alt="myDoc logo" className="w-8 h-8" />
             <h2 className="text-2xl font-bold text-gray-800">myDoc</h2>
           </div>
-          
+
           <ul className="space-y-2">
             <li>
               <Link

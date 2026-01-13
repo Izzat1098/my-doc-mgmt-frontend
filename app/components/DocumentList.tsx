@@ -13,8 +13,6 @@ interface DocumentListProps {
 
 export default function DocumentList({ items: initialItems }: DocumentListProps) {
   const [items, setItems] = useState<Document[]>(initialItems || []);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMsg, setModalMsg] = useState('');
@@ -29,8 +27,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
   useEffect(() => {
     async function fetchDocuments() {
       try {
-        setLoading(true);
-        
         // Fetch documents based on view or folder parameter
         let docs;
         if (isBin) {
@@ -54,19 +50,14 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
         });
         
         setItems(sorted);
-        setError(null);
 
       } catch (err) {
-        setError('Failed to load documents');
         console.error('Error fetching documents:', err);
-
-      } finally {
-        setLoading(false);
       }
     }
 
     fetchDocuments();
-  }, [folderId, view, searchQuery])
+  }, [folderId, view, searchQuery, isBin])
 
   const handleOpen = (item: Document) => {
     if (item.s3Url) {
@@ -86,7 +77,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       await deleteDocument(item.id);
       
       // Refetch documents after deletion (respect view/folder)
-      setLoading(true);
       let docs;
       if (isBin) {
         docs = await getBinDocuments();
@@ -104,7 +94,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       });
       
       setItems(sorted);
-      setLoading(false);
       
       // Show success modal
       setModalTitle("Successful Deletion");
@@ -118,7 +107,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       setModalMsg(`${toTitleCase(item.itemType)} ${item.title} has not been deleted`);
       setModalState("failure")
       setShowModal(true);
-      setLoading(false);
     }
   };
 
@@ -127,7 +115,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       await restoreDocument(item.id);
       
       // Refetch documents after deletion (respect view/folder)
-      setLoading(true);
       let docs;
       if (isBin) {
         docs = await getBinDocuments();
@@ -145,7 +132,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       });
       
       setItems(sorted);
-      setLoading(false);
       
       // Show success modal
       setModalTitle("Successful Restoration");
@@ -159,7 +145,6 @@ export default function DocumentList({ items: initialItems }: DocumentListProps)
       setModalMsg(`${toTitleCase(item.itemType)} ${item.title} has not been deleted`);
       setModalState("failure")
       setShowModal(true);
-      setLoading(false);
     }
   };
 

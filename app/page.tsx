@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import DocumentList from './components/DocumentList';
 import AddFolderModal from './components/AddFolderModal';
 import { createFolder, createFile, getDocuments, getDocumentsByParent } from '@/lib/api';
@@ -13,7 +13,6 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export default function Home() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const folderId = searchParams.get('folder');
   const view = searchParams.get('view');
   const [showFolderModal, setShowFolderModal] = useState(false);

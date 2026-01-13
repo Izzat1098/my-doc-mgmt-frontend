@@ -88,8 +88,8 @@ export async function createFolder(
     },
     body: JSON.stringify({
       title,
-      item_type: 'folder',
-      parent_id: parentId || null,
+      itemType: 'folder',
+      parentId: parentId || null,
     }),
   });
 
@@ -114,9 +114,9 @@ export async function createFile(
     },
     body: JSON.stringify({
       title,
-      item_type: 'file',
-      file_size_kb: fileSizeKb,
-      parent_id: parentId || null,
+      itemType: 'file',
+      fileSizeKb: fileSizeKb,
+      parentId: parentId || null,
     }),
   });
 

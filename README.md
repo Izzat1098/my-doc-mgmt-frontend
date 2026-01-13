@@ -122,7 +122,7 @@ my-doc-mgmt-frontend/
 
 ## ☁️ AWS S3 Integration
 
-Refer to the documentation in the Backend repo for details on AWS S3 integration (LINK HERE)
+Refer to the documentation in the Backend repo for details on AWS S3 integration [Link](https://github.com/Izzat1098/my-doc-mgmt-backend?tab=readme-ov-file#%EF%B8%8F-aws-s3-integration)
 
 
 ## 🚀 Setup & Installation

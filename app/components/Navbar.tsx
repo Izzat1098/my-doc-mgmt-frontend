@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useDocuments } from '@/lib/DocumentContext';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { docs, setDocs, currFolderId, setCurrFolderId, currFolderTitle, setCurrFolderTitle, folderPath, setFolderPath } = useDocuments();
   const router = useRouter();
 
   const toggleMenu = () => {
@@ -13,14 +15,15 @@ export default function Navbar() {
   };
 
   const handleLogoClick = () => {
-    router.push('/');
-    router.refresh();
+    setCurrFolderId(null);
+    setCurrFolderTitle("Home");
+    setFolderPath([{folderId: null, folderTitle: "Home"}]);
     setIsOpen(false);
   };
 
   const handleBinClick = () => {
-    router.push('/?view=bin');
-    router.refresh();
+    setCurrFolderId(null);
+    setCurrFolderTitle("Bin");
     setIsOpen(false);
   };
 
@@ -108,7 +111,7 @@ export default function Navbar() {
             </li>
             <li>
               <Link
-                href="/?view=bin"
+                href="/"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
                 onClick={handleBinClick}
               >

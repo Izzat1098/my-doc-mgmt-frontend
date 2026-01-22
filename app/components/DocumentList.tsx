@@ -10,18 +10,20 @@ import {
   getDocumentsByTitle,
 } from '@/lib/api';
 import { formatDate, toTitleCase } from '@/lib/utils';
+import { useDocuments } from '@/lib/DocumentContext';
 import type { Document } from '@/types/document';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 
 interface DocumentListProps {
-  items?: Document[];
+  docs?: Document[];
 }
 
 export default function DocumentList({
-  items: initialItems,
+  docs: initialDocs,
 }: DocumentListProps) {
-  const [items, setItems] = useState<Document[]>(initialItems || []);
+  const { docs, setDocs, currFolderId, setCurrFolderId, currFolderTitle, setCurrFolderTitle, folderPath, setFolderPath } = useDocuments();
+
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMsg, setModalMsg] = useState('');
@@ -30,10 +32,8 @@ export default function DocumentList({
   );
   const searchParams = useSearchParams();
   const router = useRouter();
-  const folderId = searchParams.get('folder');
-  const view = searchParams.get('view');
   const searchQuery = searchParams.get('search');
-  const isBin = view === 'bin';
+  const isBin = currFolderTitle === 'Bin';
 
   useEffect(() => {
     async function fetchDocuments() {
@@ -44,11 +44,10 @@ export default function DocumentList({
           docs = await getBinDocuments();
         } else if (searchQuery) {
           docs = await getDocumentsByTitle(searchQuery);
-        } else if (folderId) {
-          const parsedId = parseInt(folderId, 10);
-          docs = Number.isNaN(parsedId)
+        } else if (currFolderId) {
+          docs = Number.isNaN(currFolderId)
             ? await getDocuments()
-            : await getDocumentsByParent(parsedId);
+            : await getDocumentsByParent(currFolderId);
         } else {
           docs = await getDocuments();
         }
@@ -62,14 +61,14 @@ export default function DocumentList({
           return a.title.localeCompare(b.title);
         });
 
-        setItems(sorted);
+        setDocs(sorted);
       } catch (err) {
         console.error('Error fetching documents:', err);
       }
     }
 
     fetchDocuments();
-  }, [folderId, view, searchQuery, isBin]);
+  }, [currFolderId, searchQuery, isBin]);
 
   const handleOpen = (item: Document) => {
     if (item.s3Url) {
@@ -79,8 +78,9 @@ export default function DocumentList({
 
   const handleClick = async (item: Document) => {
     if (item.itemType === 'folder') {
-      // Update URL to navigate to folder
-      router.push(`/?folder=${item.id}`);
+      setCurrFolderId(item.id);
+      setCurrFolderTitle(item.title)
+      setFolderPath([...(folderPath || []), { folderId: item.id, folderTitle: item.title }]);
     }
   };
 
@@ -92,11 +92,10 @@ export default function DocumentList({
       let docs;
       if (isBin) {
         docs = await getBinDocuments();
-      } else if (folderId) {
-        const parsedId = parseInt(folderId, 10);
-        docs = Number.isNaN(parsedId)
+      } else if (currFolderId) {
+        docs = Number.isNaN(currFolderId)
           ? await getDocuments()
-          : await getDocumentsByParent(parsedId);
+          : await getDocumentsByParent(currFolderId);
       } else {
         docs = await getDocuments();
       }
@@ -107,7 +106,7 @@ export default function DocumentList({
         return a.title.localeCompare(b.title);
       });
 
-      setItems(sorted);
+      setDocs(sorted);
 
       // Show success modal
       setModalTitle('Successful Deletion');
@@ -135,11 +134,10 @@ export default function DocumentList({
       let docs;
       if (isBin) {
         docs = await getBinDocuments();
-      } else if (folderId) {
-        const parsedId = parseInt(folderId, 10);
-        docs = Number.isNaN(parsedId)
+      } else if (currFolderId) {
+        docs = Number.isNaN(currFolderId)
           ? await getDocuments()
-          : await getDocumentsByParent(parsedId);
+          : await getDocumentsByParent(currFolderId);
       } else {
         docs = await getDocuments();
       }
@@ -150,7 +148,7 @@ export default function DocumentList({
         return a.title.localeCompare(b.title);
       });
 
-      setItems(sorted);
+      setDocs(sorted);
 
       // Show success modal
       setModalTitle('Successful Restoration');
@@ -193,15 +191,15 @@ export default function DocumentList({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {items.map((item) => (
+            {docs.map((doc) => (
               <tr
-                key={item.id}
-                onClick={() => (!isBin ? handleClick(item) : null)}
+                key={doc.id}
+                onClick={() => (!isBin ? handleClick(doc) : null)}
                 className="hover:bg-gray-100"
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    {item.itemType === 'folder' ? (
+                    {doc.itemType === 'folder' ? (
                       <svg
                         className="w-5 h-5 text-blue-500 mr-3"
                         fill="currentColor"
@@ -223,33 +221,33 @@ export default function DocumentList({
                       </svg>
                     )}
                     <span className="text-sm font-medium text-gray-900">
-                      {item.title}
+                      {doc.title}
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm text-gray-500">
-                    {formatDate(item.updatedAt)}
+                    {formatDate(doc.updatedAt)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm text-gray-500">
-                    {item.fileSizeKb}
+                    {doc.fileSizeKb}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm text-gray-500">
-                    {item.createdBy}
+                    {doc.createdBy}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-center">
                   {!isBin ? (
                     <>
-                      {item.itemType === 'file' ? (
+                      {doc.itemType === 'file' ? (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpen(item);
+                            handleOpen(doc);
                           }}
                           className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer"
                         >
@@ -259,7 +257,7 @@ export default function DocumentList({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(item);
+                          handleDelete(doc);
                         }}
                         className="text-red-600 hover:text-red-900 cursor-pointer"
                       >
@@ -270,7 +268,7 @@ export default function DocumentList({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleRestore(item);
+                        handleRestore(doc);
                       }}
                       className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer"
                     >
@@ -286,15 +284,15 @@ export default function DocumentList({
 
       {/* Card layout for mobile */}
       <div className="md:hidden space-y-3">
-        {items.map((item) => (
+        {docs.map((doc) => (
           <div
-            key={item.id}
-            onClick={() => (!isBin ? handleClick(item) : null)}
+            key={doc.id}
+            onClick={() => (!isBin ? handleClick(doc) : null)}
             className="bg-white rounded-lg shadow p-4 cursor-pointer"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start flex-1">
-                {item.itemType === 'folder' ? (
+                {doc.itemType === 'folder' ? (
                   <svg
                     className="w-6 h-6 text-blue-500 mr-3 mt-1"
                     fill="currentColor"
@@ -317,13 +315,13 @@ export default function DocumentList({
                 )}
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-gray-900 mb-1">
-                    {item.title}
+                    {doc.title}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Updated: {formatDate(item.updatedAt)}
+                    Updated: {formatDate(doc.updatedAt)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Size: {item.fileSizeKb}
+                    Size: {doc.fileSizeKb}
                   </p>
                 </div>
               </div>
@@ -340,11 +338,11 @@ export default function DocumentList({
             <div className="mt-3 flex gap-2">
               {!isBin ? (
                 <>
-                  {item.itemType === 'file' ? (
+                  {doc.itemType === 'file' ? (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpen(item);
+                        handleOpen(doc);
                       }}
                       className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
                     >
@@ -354,7 +352,7 @@ export default function DocumentList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(item);
+                      handleDelete(doc);
                     }}
                     className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-md text-sm font-medium hover:bg-red-100"
                   >
@@ -365,7 +363,7 @@ export default function DocumentList({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRestore(item);
+                    handleRestore(doc);
                   }}
                   className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
                 >

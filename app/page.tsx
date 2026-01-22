@@ -10,6 +10,7 @@ import {
   getDocumentsByParent,
 } from '@/lib/api';
 import { uploadToS3 } from '@/lib/s3';
+import { useDocuments } from '@/lib/DocumentContext';
 import { useSearchParams } from 'next/navigation';
 import { useState, useRef } from 'react';
 
@@ -18,30 +19,25 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export default function Home() {
   const searchParams = useSearchParams();
-  const folderId = searchParams.get('folder');
-  const view = searchParams.get('view');
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { docs, setDocs, currFolderId, setCurrFolderId, currFolderTitle, setCurrFolderTitle, folderPath, setFolderPath } = useDocuments();
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMsg, setModalMsg] = useState('');
   const [modalState, setModalState] = useState<'success' | 'failure'>(
     'success'
   );
-  const isBin = view === 'bin';
+  const isBin = currFolderTitle === 'Bin';
 
   const handleAddFolder = async (folderName: string) => {
     try {
-      const parentId = folderId ? parseInt(folderId, 10) : undefined;
+      const parentId = currFolderId ? currFolderId : undefined;
 
       // Check if folder name already exists
       try {
-        const existingDocs = parentId
-          ? await getDocumentsByParent(parentId)
-          : await getDocuments();
-
-        const folderExists = existingDocs.some(
+        const folderExists = docs.some(
           (doc) =>
             doc.itemType === 'folder' &&
             doc.title.toLowerCase() === folderName.toLowerCase()
@@ -102,17 +98,12 @@ export default function Home() {
     }
 
     try {
-      const parentId = folderId ? parseInt(folderId, 10) : undefined;
+      const parentId = currFolderId ? currFolderId : undefined;
       const fileSizeKb = Math.round(file.size / 1024); // Convert bytes to KB
 
       // Check if file name already exists
       try {
-        const existingDocs = parentId
-          ? await getDocumentsByParent(parentId)
-          : await getDocuments();
-        console.log(existingDocs);
-
-        const fileExists = existingDocs.some(
+        const fileExists = docs.some(
           (doc) =>
             doc.itemType === 'file' &&
             doc.title.toLowerCase() === file.name.toLowerCase()
@@ -191,9 +182,35 @@ export default function Home() {
 
       <div className="mb-6 flex flex-wrap items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            {isBin ? 'Bin' : 'My Documents'}
-          </h1>
+          {isBin ? (
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Bin</h1>
+          ) : (
+            <nav className="flex items-center space-x-2 mb-2">
+              {folderPath.map((crumb, index) => (
+                <div key={index} className="flex items-end">
+                  {index > 0 && (
+                    <svg className="w-7 h-7 mx-2 my-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  <button
+                    onClick={() => {
+                      setCurrFolderId(crumb.folderId);
+                      setCurrFolderTitle(crumb.folderTitle);
+                      setFolderPath(folderPath.slice(0, index + 1));
+                    }}
+                    className={`text-2xl font-bold hover:text-blue-600 transition-colors cursor-pointer ${
+                      index === folderPath.length - 1 
+                        ? 'text-gray-800' 
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    {crumb.folderTitle}
+                  </button>
+                </div>
+              ))}
+            </nav>
+          )}
           <p className="text-gray-600">
             {isBin ? 'Your deleted items' : 'Manage your files and folders'}
           </p>

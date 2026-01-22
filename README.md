@@ -22,6 +22,8 @@ A modern, production-ready document management system built with Next.js 16, fea
 ![Main Dashboard](./screenshots/dashboard.png)
 *Main dashboard showing folder structure and file organization*
 
+![Main Dashboard](./screenshots/breadcrumbs.png)
+*Breadcrumbs for folder path for ease of navigation*
 
 ![File](./screenshots/file-picker.png)
 *Adding file*
@@ -73,7 +75,7 @@ A modern, production-ready document management system built with Next.js 16, fea
 - **Web Framework**: Next.js 16, React 19
 - **Language**: TypeScript 5
 - **Styling & UI**: Tailwind CSS 4, PostCSS
-- **State Management**: React Hooks (useState, useRef, useSearchParams)
+- **State Management**: React Context API
 
 ### Development Tools
 - **Build Tool**: Next.js Dev Tools

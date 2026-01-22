@@ -3,6 +3,7 @@ import SearchBar from './components/SearchBar';
 import './globals.css';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { DocumentProvider } from '@/lib/DocumentContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,17 +30,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
-        <div className="flex h-screen overflow-hidden">
-          <Navbar />
+        <DocumentProvider>
+          <div className="flex h-screen overflow-hidden">
+            <Navbar />
 
-          <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
-            {/* Search Bar */}
-            <SearchBar />
+            <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
+              {/* Search Bar */}
+              <SearchBar />
 
-            {/* Page Content */}
-            <main className="flex-1 overflow-auto">{children}</main>
+              {/* Page Content */}
+              <main className="flex-1 overflow-auto">{children}</main>
+            </div>
           </div>
-        </div>
+        </DocumentProvider>
       </body>
     </html>
   );
